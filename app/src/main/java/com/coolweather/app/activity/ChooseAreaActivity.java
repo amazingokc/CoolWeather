@@ -42,19 +42,33 @@ public class ChooseAreaActivity extends Activity {
     private ArrayAdapter<String> adapter;
     private CoolWeatherDB coolWeatherDB;
     private List<String> dataList = new ArrayList<String>();
-
+    /**
+     * 省列表
+     */
     private List<Province> provinceList;
-
+    /**
+     * 市列表
+     */
     private List<City> cityList;
-
+    /**
+     * 县列表
+     */
     private List<County> countyList;
-
+    /**
+     * 选择的省份
+     */
     private Province selectedProvince;
-
+    /**
+     * 选择的城市
+     */
     private City selectedCity;
-
+    /**
+     * 当前选中的级别
+     */
     private int currentLevel;
-
+    /**
+     * 是否从WeatherActivity中跳转过来
+     */
     private boolean isFromWeatherActivity;
 
     @Override
@@ -62,6 +76,7 @@ public class ChooseAreaActivity extends Activity {
         super.onCreate(savedInstanceState);
         isFromWeatherActivity = getIntent().getBooleanExtra("from_weather_activity", false);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        //已经选择了城市且不是从WeatherActivity跳转过来，才会直接跳转到WeatherActivity
         if (prefs.getBoolean("city_selected", false) && !isFromWeatherActivity) {
             Intent intent = new Intent(this, WeatherActivity.class);
             startActivity(intent);
@@ -94,10 +109,12 @@ public class ChooseAreaActivity extends Activity {
                 }
             }
         });
-        queryProvinces();
+        queryProvinces();  //加载省级数据
     }
 
-
+    /**
+     * 查询全国所有的省，优先从数据库中查询，如果没有查询到再去服务器上查询
+     */
     private void queryProvinces() {
         provinceList = coolWeatherDB.loadProvinces();
         if (provinceList.size() > 0) {
@@ -114,7 +131,9 @@ public class ChooseAreaActivity extends Activity {
         }
     }
 
-
+    /**
+     * 查询全国所有的城市，优先从数据库中查询，如果没有查询到再去服务器上查询
+     */
     private void queryCities() {
         cityList = coolWeatherDB.loadCities(selectedProvince.getId());
         if (cityList.size() > 0) {
@@ -131,7 +150,9 @@ public class ChooseAreaActivity extends Activity {
         }
     }
 
-
+    /**
+     * 查询全国所有的县，优先从数据库中查询，如果没有查询到再去服务器上查询
+     */
     private void queryCounties() {
         countyList = coolWeatherDB.loadCounties(selectedCity.getId());
         if (countyList.size() > 0) {
@@ -148,7 +169,11 @@ public class ChooseAreaActivity extends Activity {
         }
     }
 
-
+    /**
+     *根据传入的代号和类型从服务器上查询省市县数据
+     * @param code
+     * @param type
+     */
     private void queryFromServer(final String code, final String type) {
         String address;
         if (!TextUtils.isEmpty(code)) {
@@ -172,7 +197,7 @@ public class ChooseAreaActivity extends Activity {
                             response, selectedCity.getId());
                 }
                 if (result) {
-
+                    //通过runOnUiThread（）方法回到主线程处理逻辑
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -191,7 +216,7 @@ public class ChooseAreaActivity extends Activity {
 
             @Override
             public void onError(Exception e) {
-
+               //通过runOnUiThread（）方法回到主线程处理逻辑
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -205,7 +230,7 @@ public class ChooseAreaActivity extends Activity {
     }
 
     /**
-     *
+     *显示进度对话框
      */
     private void showProgressDialog() {
         if (progressDialog == null) {
@@ -216,14 +241,18 @@ public class ChooseAreaActivity extends Activity {
         progressDialog.show();
     }
 
-
+    /**
+     * 关闭进度对话框
+     */
     private void closeProgressDialog() {
         if (progressDialog != null) {
             progressDialog.dismiss();
         }
     }
 
-
+    /**
+     * 捕获Back键，根据当前的级别来判断，此时应该返回市列表，省列表还是县列表
+     */
     @Override
     public void onBackPressed() {
         if (currentLevel == LEVEL_COUNTY) {
